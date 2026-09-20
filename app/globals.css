@@ -1,0 +1,120 @@
+@import "ggt-design-kit/src/index.css";
+
+:root {
+  --ggt-accent: #c07a55;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+.ggt-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 720px;
+}
+
+.ggt-label {
+  color: var(--ggt-mist);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ggt-help,
+.ggt-error,
+.ggt-note,
+.ggt-disclaimer {
+  margin: 8px 0 0;
+  color: var(--ggt-mist);
+  font-size: 0.95rem;
+}
+
+.ggt-error {
+  color: var(--ggt-crit, #c45c5c);
+}
+
+.ggt-disclaimer {
+  margin-top: 16px;
+  font-size: 0.92rem;
+}
+
+.ggt-score {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ggt-score strong {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.ggt-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ggt-list li {
+  padding: 12px 0;
+  border-top: 1px solid var(--ggt-hairline);
+}
+
+.ggt-list li:first-child {
+  border-top: 0;
+}
+
+.ggt-part-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: baseline;
+}
+
+.ggt-pill {
+  color: var(--ggt-accent);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ggt-working {
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid var(--ggt-hairline);
+  background: var(--ggt-void);
+  color: var(--ggt-paper);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.ggt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ggt-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.ggt-tally ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.ggt-tally li + li {
+  margin-top: 8px;
+}
