@@ -5,7 +5,6 @@ const basePath = rawBase.replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
   basePath: basePath || undefined,
-  assetPrefix: basePath || undefined,
 };
 
 export default nextConfig;

@@ -1,5 +1,6 @@
 import {
   TOOL_ID,
+  TOOL_PATH,
   allowLocalUnlock,
   listingOptimizerSaleLive,
   shopOrigin,
@@ -16,7 +17,7 @@ export type SaleResult =
   | {
       ok: false;
       message: string;
-      code?: "sku_not_live" | "unconfigured" | "shop_error";
+      code?: "sku_not_live" | "unconfigured" | "shop_error" | "invalid_return_url";
     };
 
 export type VerifyResult = {
@@ -50,9 +51,20 @@ export async function startSale(input: SaleRequest): Promise<SaleResult> {
   const origin = shopOrigin();
   if (!origin) {
     if (allowLocalUnlock()) {
-      const next = new URL(input.returnUrl);
+      const next = buildLocalUnlockUrl(input.returnUrl);
+      if (!next) {
+        return {
+          ok: false,
+          code: "invalid_return_url",
+          message: "Local unlock return URL must stay on /tools/listing-optimizer.",
+        };
+      }
       next.searchParams.set("session_id", LOCAL_SESSION);
-      return { ok: true, checkoutUrl: next.toString(), sessionId: LOCAL_SESSION };
+      return {
+        ok: true,
+        checkoutUrl: `${next.pathname}${next.search}${next.hash}`,
+        sessionId: LOCAL_SESSION,
+      };
     }
     return {
       ok: false,
@@ -107,20 +119,32 @@ export async function verifySale(sessionId: string): Promise<VerifyResult> {
 
   const getUrl = new URL(`${origin}/api/verify`);
   getUrl.searchParams.set("session_id", sessionId);
-  const getRes = await fetch(getUrl.toString(), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
-  const getBody = await readJson(getRes);
-  if (isVerifyShape(getBody)) return normalizeVerify(getBody, sessionId);
+  getUrl.searchParams.set("product", TOOL_ID);
+  getUrl.searchParams.set("toolId", TOOL_ID);
 
-  const postRes = await fetch(`${origin}/api/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ sessionId, session_id: sessionId }),
-  });
-  const postBody = await readJson(postRes);
-  if (isVerifyShape(postBody)) return normalizeVerify(postBody, sessionId);
+  try {
+    const getRes = await fetch(getUrl.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    const getBody = await readJson(getRes);
+    if (isVerifyShape(getBody)) return normalizeVerify(getBody, sessionId);
+
+    const postRes = await fetch(`${origin}/api/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ sessionId, session_id: sessionId, product: TOOL_ID, toolId: TOOL_ID }),
+    });
+    const postBody = await readJson(postRes);
+    if (isVerifyShape(postBody)) return normalizeVerify(postBody, sessionId);
+  } catch {
+    return {
+      ok: false,
+      paid: false,
+      kind: "network_error",
+      message: "Could not reach the shop payment desk.",
+    };
+  }
 
   return {
     ok: false,
@@ -187,16 +211,43 @@ function normalizeVerify(data: Record<string, unknown>, sessionId: string): Veri
   const paidFlag = data.paid === true;
   const zeroPromo = paymentStatus === "no_payment_required";
   const okFlag = data.ok === true;
-  const paid = (okFlag && paidFlag) || (okFlag && zeroPromo) || paidFlag || zeroPromo;
+  const productMatch = hasVerifiedProduct(data);
+  const paid = okFlag && productMatch && (paidFlag || zeroPromo);
 
   return {
-    ok: okFlag || paid,
+    ok: okFlag && productMatch,
     paid,
     kind: asString(data.kind),
-    message: asString(data.message),
+    message:
+      asString(data.message) ??
+      (okFlag && (paidFlag || zeroPromo) && !productMatch
+        ? "The shop did not confirm a Listing Optimizer sale."
+        : undefined),
     sessionId: asString(data.sessionId) ?? asString(data.session_id) ?? sessionId,
     paymentStatus,
   };
+}
+
+function buildLocalUnlockUrl(returnUrl: string): URL | null {
+  try {
+    const next = new URL(returnUrl, "http://local.test");
+    if (next.origin !== "http://local.test") return null;
+    const pathname = next.pathname.replace(/\/$/, "") || "/";
+    if (pathname !== TOOL_PATH) return null;
+    return next;
+  } catch {
+    return null;
+  }
+}
+
+function hasVerifiedProduct(data: Record<string, unknown>): boolean {
+  return (
+    asString(data.product) === TOOL_ID ||
+    asString(data.productId) === TOOL_ID ||
+    asString(data.product_id) === TOOL_ID ||
+    asString(data.toolId) === TOOL_ID ||
+    asString(data.tool_id) === TOOL_ID
+  );
 }
 
 async function readJson(res: Response): Promise<unknown> {

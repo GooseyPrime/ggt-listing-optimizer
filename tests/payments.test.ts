@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { startSale } from "@/lib/payments";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { startSale, verifySale } from "@/lib/payments";
 
 const original = { ...process.env };
 
 afterEach(() => {
   process.env = { ...original };
+  vi.unstubAllGlobals();
 });
 
 describe("startSale gate", () => {
@@ -28,11 +29,78 @@ describe("startSale gate", () => {
     process.env.NEXT_PUBLIC_SHOP_SALE_PRODUCTS = "listing-optimizer";
     const result = await startSale({
       url: "https://example.com/tools/listing-optimizer",
-      returnUrl: "https://example.com/tools/listing-optimizer",
+      returnUrl: "/tools/listing-optimizer",
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.checkoutUrl).toContain("session_id=local");
+      expect(result.checkoutUrl).toBe("/tools/listing-optimizer?session_id=local");
     }
+  });
+
+  it("rejects local unlock redirects outside the tool path", async () => {
+    delete process.env.NEXT_PUBLIC_SHOP_ORIGIN;
+    process.env.NEXT_PUBLIC_ALLOW_LOCAL_UNLOCK = "true";
+    process.env.NEXT_PUBLIC_SHOP_SALE_PRODUCTS = "listing-optimizer";
+    const result = await startSale({
+      url: "https://example.com/tools/listing-optimizer",
+      returnUrl: "https://evil.example/tools/listing-optimizer",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("invalid_return_url");
+    }
+  });
+});
+
+describe("verifySale", () => {
+  it("requires a matching listing-optimizer product before unlocking", async () => {
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true, paid: true, product: "seo-audit" })),
+      ),
+    );
+
+    const result = await verifySale("sess_123");
+
+    expect(result.ok).toBe(false);
+    expect(result.paid).toBe(false);
+    expect(result.message).toBe("The shop did not confirm a Listing Optimizer sale.");
+  });
+
+  it("passes product metadata to verify calls and accepts matching paid sessions", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "pending" })))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true, paid: true, product: "listing-optimizer" })),
+      );
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await verifySale("sess_456");
+
+    expect(result.ok).toBe(true);
+    expect(result.paid).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("product=listing-optimizer");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("toolId=listing-optimizer");
+    expect(String(fetchMock.mock.calls[1]?.[1]?.body)).toContain('"product":"listing-optimizer"');
+    expect(String(fetchMock.mock.calls[1]?.[1]?.body)).toContain('"toolId":"listing-optimizer"');
+  });
+
+  it("returns a structured error when verification fetch fails", async () => {
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+
+    const result = await verifySale("sess_789");
+
+    expect(result).toMatchObject({
+      ok: false,
+      paid: false,
+      kind: "network_error",
+      message: "Could not reach the shop payment desk.",
+    });
   });
 });

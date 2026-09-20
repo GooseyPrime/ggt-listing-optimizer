@@ -11,6 +11,7 @@ import {
   batchStorageKey,
   draftStorageKey,
   listingOptimizerSaleLive,
+  publicBasePath,
 } from "@/lib/config";
 import { rewrittenListingsToCsv, downloadCsvFilename } from "@/lib/csv";
 import { buildListingInput, parseBatchListings } from "@/lib/parse";
@@ -47,6 +48,7 @@ export function ListingOptimizerApp() {
 
   const saleLive = useMemo(() => listingOptimizerSaleLive(), []);
   const priceLabel = useMemo(() => shopPriceLabel(), []);
+  const basePath = useMemo(() => publicBasePath(), []);
 
   const persistDraft = useCallback((next: DraftFields) => {
     try {
@@ -80,7 +82,7 @@ export function ListingOptimizerApp() {
 
     void (async () => {
       try {
-        const res = await fetch("/api/verify", {
+        const res = await fetch(`${basePath}/api/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
@@ -195,9 +197,9 @@ export function ListingOptimizerApp() {
     persistDraft(draft);
     persistBatch(batchRaw);
     try {
-      const returnUrl = window.location.href.split("?")[0] ?? "/";
+      const returnUrl = window.location.pathname || "/";
       const toolUrl = `${window.location.origin}${TOOL_PATH}`;
-      const res = await fetch("/api/sale", {
+      const res = await fetch(`${basePath}/api/sale`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: toolUrl, returnUrl }),

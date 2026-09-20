@@ -45,4 +45,16 @@ describe("rewriteListing", () => {
     expect(csv).toContain("brand_words_retained");
     expect(csv).toContain(row.newTitle);
   });
+
+  it("prefixes formula-like cells before CSV escaping", () => {
+    const csv = rewrittenListingsToCsv([
+      {
+        ...rewriteListing(sample),
+        newTitle: "=SUM(1,1)",
+        sourceTitle: "+cmd",
+      },
+    ]);
+    expect(csv).toContain("\"'=SUM(1,1)\"");
+    expect(csv).toContain("'+cmd");
+  });
 });
