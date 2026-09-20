@@ -88,11 +88,12 @@ export function ListingOptimizerApp() {
           body: JSON.stringify({ sessionId }),
         });
         const result = (await res.json()) as {
+          ok?: boolean;
           paid?: boolean;
           kind?: string;
           message?: string;
         };
-        if (result.paid) {
+        if (result.ok && result.paid) {
           setUnlocked(true);
           setUnlockNote(
             result.kind === "local_unlock"
