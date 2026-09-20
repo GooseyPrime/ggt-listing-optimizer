@@ -7,7 +7,6 @@ import {
   PAID_LISTING_CAP,
   RULES_CHECKED,
   TOOL_NAME,
-  TOOL_PATH,
   batchStorageKey,
   draftStorageKey,
   listingOptimizerSaleLive,
@@ -198,7 +197,7 @@ export function ListingOptimizerApp() {
     persistBatch(batchRaw);
     try {
       const returnUrl = window.location.pathname || "/";
-      const toolUrl = `${window.location.origin}${TOOL_PATH}`;
+      const toolUrl = new URL(window.location.pathname || "/", window.location.origin).toString();
       const res = await fetch(`${basePath}/api/sale`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
