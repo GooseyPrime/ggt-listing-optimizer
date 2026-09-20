@@ -72,7 +72,7 @@ describe("verifySale", () => {
   it("passes product metadata to verify calls and accepts matching paid sessions", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "pending" })))
+      .mockResolvedValueOnce(new Response("upstream error", { status: 502 }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ ok: true, paid: true, product: "listing-optimizer" })),
       );
@@ -131,5 +131,23 @@ describe("verifySale", () => {
     expect(result.paid).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
+  });
+
+  it("does not retry with POST after a successful GET invalid payload", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "pending" })));
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await verifySale("sess_no_retry");
+
+    expect(result).toMatchObject({
+      ok: false,
+      paid: false,
+      kind: "invalid_response",
+      message: "The shop did not confirm this sale.",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

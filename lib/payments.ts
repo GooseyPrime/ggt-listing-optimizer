@@ -122,32 +122,50 @@ export async function verifySale(sessionId: string): Promise<VerifyResult> {
   getUrl.searchParams.set("product", TOOL_ID);
   getUrl.searchParams.set("toolId", TOOL_ID);
 
+  let shouldTryPost = false;
   try {
     const getRes = await fetch(getUrl.toString(), {
       method: "GET",
       headers: { Accept: "application/json" },
     });
-    const getBody = await readJson(getRes);
-    if (isVerifyShape(getBody)) return normalizeVerify(getBody, sessionId);
+    if (!getRes.ok) {
+      shouldTryPost = true;
+    } else {
+      const getBody = await readJson(getRes);
+      if (isVerifyShape(getBody)) return normalizeVerify(getBody, sessionId);
+      return {
+        ok: false,
+        paid: false,
+        kind: "invalid_response",
+        message: "The shop did not confirm this sale.",
+      };
+    }
   } catch {
-    /* try POST fallback */
+    shouldTryPost = true;
   }
 
-  try {
-    const postRes = await fetch(`${origin}/api/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ sessionId, session_id: sessionId, product: TOOL_ID, toolId: TOOL_ID }),
-    });
-    const postBody = await readJson(postRes);
-    if (isVerifyShape(postBody)) return normalizeVerify(postBody, sessionId);
-  } catch {
-    return {
-      ok: false,
-      paid: false,
-      kind: "network_error",
-      message: "Could not reach the shop payment desk.",
-    };
+  if (shouldTryPost) {
+    try {
+      const postRes = await fetch(`${origin}/api/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          session_id: sessionId,
+          product: TOOL_ID,
+          toolId: TOOL_ID,
+        }),
+      });
+      const postBody = await readJson(postRes);
+      if (isVerifyShape(postBody)) return normalizeVerify(postBody, sessionId);
+    } catch {
+      return {
+        ok: false,
+        paid: false,
+        kind: "network_error",
+        message: "Could not reach the shop payment desk.",
+      };
+    }
   }
 
   return {
