@@ -241,13 +241,13 @@ function buildLocalUnlockUrl(returnUrl: string): URL | null {
 }
 
 function hasVerifiedProduct(data: Record<string, unknown>): boolean {
-  return (
-    asString(data.product) === TOOL_ID ||
-    asString(data.productId) === TOOL_ID ||
-    asString(data.product_id) === TOOL_ID ||
-    asString(data.toolId) === TOOL_ID ||
-    asString(data.tool_id) === TOOL_ID
-  );
+  const product =
+    asString(data.product) ??
+    asString(data.productId) ??
+    asString(data.product_id) ??
+    asString(data.toolId) ??
+    asString(data.tool_id);
+  return product ? product === TOOL_ID : true;
 }
 
 async function readJson(res: Response): Promise<unknown> {

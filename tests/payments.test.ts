@@ -90,6 +90,19 @@ describe("verifySale", () => {
     expect(String(fetchMock.mock.calls[1]?.[1]?.body)).toContain('"toolId":"listing-optimizer"');
   });
 
+  it("accepts paid confirmations that omit product metadata", async () => {
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, paid: true }))),
+    );
+
+    const result = await verifySale("sess_999");
+
+    expect(result.ok).toBe(true);
+    expect(result.paid).toBe(true);
+  });
+
   it("returns a structured error when verification fetch fails", async () => {
     process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
