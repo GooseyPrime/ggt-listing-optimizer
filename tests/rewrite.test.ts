@@ -50,11 +50,11 @@ describe("rewriteListing", () => {
     const csv = rewrittenListingsToCsv([
       {
         ...rewriteListing(sample),
-        newTitle: "=SUM(1,1)",
+        newTitle: " =SUM(1,1)",
         sourceTitle: "+cmd",
       },
     ]);
-    expect(csv).toContain("\"'=SUM(1,1)\"");
+    expect(csv).toContain("\"' =SUM(1,1)\"");
     expect(csv).toContain("'+cmd");
   });
 });

@@ -116,4 +116,20 @@ describe("verifySale", () => {
       message: "Could not reach the shop payment desk.",
     });
   });
+
+  it("falls back to POST when GET verification fails", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, paid: true })));
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await verifySale("sess_post_fallback");
+
+    expect(result.ok).toBe(true);
+    expect(result.paid).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
+  });
 });

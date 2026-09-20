@@ -1,7 +1,7 @@
 import type { RewrittenListing } from "./types";
 
 function escapeCell(value: string): string {
-  const safeValue = /^[=+\-@]/.test(value) ? `'${value}` : value;
+  const safeValue = /^\s*[=+\-@]/.test(value) ? `'${value}` : value;
   if (/[",\n\r]/.test(safeValue)) {
     return `"${safeValue.replace(/"/g, '""')}"`;
   }

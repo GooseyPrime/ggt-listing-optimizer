@@ -129,7 +129,11 @@ export async function verifySale(sessionId: string): Promise<VerifyResult> {
     });
     const getBody = await readJson(getRes);
     if (isVerifyShape(getBody)) return normalizeVerify(getBody, sessionId);
+  } catch {
+    /* try POST fallback */
+  }
 
+  try {
     const postRes = await fetch(`${origin}/api/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
