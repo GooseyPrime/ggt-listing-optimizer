@@ -6,6 +6,7 @@ const original = { ...process.env };
 afterEach(() => {
   process.env = { ...original };
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("startSale gate", () => {
@@ -21,6 +22,24 @@ describe("startSale gate", () => {
     if (!result.ok) {
       expect(result.code).toBe("sku_not_live");
     }
+  });
+
+  it("starts checkout when the sale products variable is unset", async () => {
+    process.env.NEXT_PUBLIC_SHOP_ORIGIN = "https://www.goldengoosetools.com";
+    delete process.env.NEXT_PUBLIC_SHOP_SALE_PRODUCTS;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true, url: "https://checkout.example/session" })),
+      ),
+    );
+
+    const result = await startSale({
+      url: "https://example.com/tools/listing-optimizer",
+      returnUrl: "https://example.com/tools/listing-optimizer",
+    });
+
+    expect(result).toEqual({ ok: true, checkoutUrl: "https://checkout.example/session" });
   });
 
   it("local unlock when shop origin unset and allow flag true", async () => {
@@ -49,6 +68,22 @@ describe("startSale gate", () => {
     if (!result.ok) {
       expect(result.code).toBe("invalid_return_url");
     }
+  });
+
+  it("does not grant local unlocks in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    delete process.env.NEXT_PUBLIC_SHOP_ORIGIN;
+    process.env.NEXT_PUBLIC_SHOP_SALE_PRODUCTS = "listing-optimizer";
+    process.env.NEXT_PUBLIC_ALLOW_LOCAL_UNLOCK = "true";
+
+    const checkout = await startSale({
+      url: "https://example.com/tools/listing-optimizer",
+      returnUrl: "/tools/listing-optimizer",
+    });
+    const verification = await verifySale("local");
+
+    expect(checkout).toMatchObject({ ok: false, code: "unconfigured" });
+    expect(verification).toMatchObject({ ok: false, paid: false, kind: "unconfigured" });
   });
 });
 
