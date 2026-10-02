@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ACCENT,
-  LIVE,
   PAID_LISTING_CAP,
   RULES_CHECKED,
   TOOL_NAME,
@@ -98,7 +97,7 @@ export function ListingOptimizerApp() {
           setUnlockNote(
             result.kind === "local_unlock"
               ? "Local unlock (dev only)."
-              : "Payment verified by the shop desk. Spreadsheet unlock is open for this browser session.",
+              : "Payment confirmed. Your spreadsheet unlock is open on this page — download your CSV before you close the tab.",
           );
         } else if (result.message) {
           setError(result.message);
@@ -236,7 +235,7 @@ export function ListingOptimizerApp() {
         <p className="ggt-disclaimer">
           Checks follow Etsy&apos;s published listing limits (rules checked {RULES_CHECKED}).
           Golden Goose Tools is not affiliated with Etsy and does not use Etsy logos. Free v1
-          scores Etsy only — eBay and Shopify are deferred. Registry live={String(LIVE)}.
+          scores Etsy only — eBay and Shopify are not supported yet.
         </p>
 
         <div className="ggt-field">
@@ -353,7 +352,7 @@ export function ListingOptimizerApp() {
           </section>
         ) : null}
 
-        <aside className={`ggt-tally${unlocked ? "" : " ggt-tally--locked"}`}>
+        <aside className="ggt-tally">
           <h2>{unlocked ? "Paid unlock open" : "Paid unlock"}</h2>
           <ul>
             <li>Up to {PAID_LISTING_CAP} rewritten listings</li>
@@ -362,13 +361,7 @@ export function ListingOptimizerApp() {
               words kept
             </li>
             <li>Rules-based rewrite (deterministic) for v1</li>
-            {priceLabel ? (
-              <li>Price mirrored from shop config: {priceLabel}</li>
-            ) : (
-              <li>
-                Price shown once shop publishes NEXT_PUBLIC_PRICE_CENTS (Cos brief $7 / 700¢)
-              </li>
-            )}
+            {priceLabel ? <li>Price: {priceLabel}</li> : <li>Price is shown at checkout</li>}
           </ul>
           {unlockNote ? <p className="ggt-note">{unlockNote}</p> : null}
           {!unlocked ? (
@@ -386,13 +379,11 @@ export function ListingOptimizerApp() {
                     ? priceLabel
                       ? `Unlock spreadsheet · ${priceLabel}`
                       : "Unlock spreadsheet"
-                    : "Checkout not live on shop desk yet"}
+                    : "Checkout is not open for this tool yet"}
               </button>
               {!saleLive ? (
                 <p className="ggt-help">
-                  Free scoring still works. Checkout stays gated until{" "}
-                  <code>listing-optimizer</code> is on the shop sale allowlist (no fallthrough to
-                  SEO Audit pricing).
+                  Free scoring still works. The paid spreadsheet is not available yet.
                 </p>
               ) : null}
             </section>
@@ -444,8 +435,8 @@ export function ListingOptimizerApp() {
         </aside>
 
         <p className="ggt-trust">
-          Paid once. Yours to keep. No account required for the free score. Listing text stays in
-          this browser until you unlock and download.
+          Pay once, no account. The free score needs no payment. Your listing text stays in this
+          browser until you unlock and download.
         </p>
       </div>
     </main>
