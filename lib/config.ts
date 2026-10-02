@@ -26,6 +26,9 @@ export function batchStorageKey(): string {
   return BATCH_STORAGE_KEY;
 }
 
+const DEFAULT_SALE_PRODUCTS =
+  "seo-audit,accessibility,fix-it,a11y-statement,quote-invoice,chat-to-pdf,cottage-food-labels,maker-label-pack,listing-optimizer,domain-ssl-report";
+
 type Env = Record<string, string | undefined>;
 
 function publicEnv(): Env {
@@ -45,13 +48,13 @@ export function shopOrigin(env: Env = publicEnv()): string | null {
 }
 
 /**
- * Products the shop sale desk currently accepts.
- * Default (when unset): seo-audit|accessibility only. Until `listing-optimizer`
- * appears, checkout must refuse — never fall through (would be priced as SEO).
+ * Products the shop sale desk accepts (mirrors SALE_PRODUCT_IDS in the shop).
+ * Override with NEXT_PUBLIC_SHOP_SALE_PRODUCTS; if it omits `listing-optimizer`,
+ * checkout refuses rather than falling through to another product's price.
  */
 export function shopSaleProducts(env: Env = publicEnv()): Set<string> {
   const raw = env.NEXT_PUBLIC_SHOP_SALE_PRODUCTS?.trim();
-  const list = (raw && raw.length > 0 ? raw : "seo-audit,accessibility")
+  const list = (raw && raw.length > 0 ? raw : DEFAULT_SALE_PRODUCTS)
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -63,7 +66,8 @@ export function listingOptimizerSaleLive(env: Env = publicEnv()): boolean {
 }
 
 export function allowLocalUnlock(env: Env = publicEnv()): boolean {
-  return env.NEXT_PUBLIC_ALLOW_LOCAL_UNLOCK === "true";
+  // Development only: never honoured in a production build.
+  return process.env.NODE_ENV !== "production" && env.NEXT_PUBLIC_ALLOW_LOCAL_UNLOCK === "true";
 }
 
 export function publicBasePath(env: Env = publicEnv()): string {
