@@ -12,7 +12,7 @@ Accent: Terracotta `#c07a55`. Registry id: `listing-optimizer`. Shop path: `/too
 npm i && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). For the shop path without `basePath`, use [http://localhost:3000/tools/listing-optimizer](http://localhost:3000/tools/listing-optimizer).
+Open [http://localhost:3000/tools/listing-optimizer](http://localhost:3000/tools/listing-optimizer), the default local base path.
 
 Copy `.env.example` to `.env.local` if you want shop origin, mirrored price, or local unlock.
 
@@ -61,14 +61,14 @@ Price is read from env that **mirrors shop config**:
 
 If the price key is unset, the page does not invent a dollar figure.
 
-Until `listing-optimizer` is on the shop sale allowlist (`NEXT_PUBLIC_SHOP_SALE_PRODUCTS`), checkout **refuses** rather than falling through to SEO Audit pricing.
+When `NEXT_PUBLIC_SHOP_SALE_PRODUCTS` is unset, checkout uses the default list of all ten shop products, including `listing-optimizer`. If you set this variable explicitly and omit `listing-optimizer`, checkout **refuses** rather than falling through to SEO Audit pricing.
 
 Local development without a shop: set `NEXT_PUBLIC_ALLOW_LOCAL_UNLOCK=true`. Checkout then returns with `session_id=local`. Do not enable that in production.
 
 ## Subpath deploy
 
-- Standalone / local: leave `NEXT_PUBLIC_BASE_PATH` empty. `/` and `/tools/listing-optimizer` both render the tool.
-- Shop subpath: set `NEXT_PUBLIC_BASE_PATH=/tools/listing-optimizer`.
+- Shop subpath: leave `NEXT_PUBLIC_BASE_PATH` unset to use `/tools/listing-optimizer`, or set it explicitly to `/tools/listing-optimizer`.
+- Standalone / root: explicitly set `NEXT_PUBLIC_BASE_PATH=""` to serve the tool at `/`. An unset variable uses the shop subpath default.
 
 Keep registry `live: false` until Brandon turns it on.
 

@@ -19,4 +19,4 @@ Shop `POST /api/sale` body (after allowlist merges):
 { "url": "https://www.goldengoosetools.com/tools/listing-optimizer", "product": "listing-optimizer", "toolId": "listing-optimizer" }
 ```
 
-**Today** the desk allowlist may be truncated. This app **refuses checkout** until `listing-optimizer` appears in `NEXT_PUBLIC_SHOP_SALE_PRODUCTS`. No fallthrough to SEO Audit pricing. Local unlock / graceful fail OK for development.
+When `NEXT_PUBLIC_SHOP_SALE_PRODUCTS` is unset, the app uses the default list of all ten shop products, including `listing-optimizer`. If explicitly set without `listing-optimizer`, the app **refuses checkout**. No fallthrough to SEO Audit pricing. Local unlock / graceful fail OK for development.
