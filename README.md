@@ -12,7 +12,7 @@ Accent: Terracotta `#c07a55`. Registry id: `listing-optimizer`. Shop path: `/too
 npm i && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). For the shop path without `basePath`, use [http://localhost:3000/tools/listing-optimizer](http://localhost:3000/tools/listing-optimizer).
+Open [http://localhost:3000/tools/listing-optimizer](http://localhost:3000/tools/listing-optimizer), the default local base path.
 
 Copy `.env.example` to `.env.local` if you want shop origin, mirrored price, or local unlock.
 
