@@ -4,8 +4,8 @@ export const PRODUCT_ID = "listing-optimizer";
 export const TOOL_SLUG = "listing-optimizer";
 export const TOOL_PATH = "/tools/listing-optimizer";
 export const TOOL_NAME = "Listing Optimizer";
-/** Terracotta — Cos accent for this tool. */
-export const ACCENT = "#c07a55";
+/** Citron accent (theme id `citron` in ggt-design-kit src/themes.css, applied on <html> in app/layout.tsx). */
+export const ACCENT = "#b8b94e";
 
 export const LIVE = false;
 

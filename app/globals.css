@@ -1,9 +1,5 @@
 @import "ggt-design-kit/src/index.css";
 
-:root {
-  --ggt-accent: #c07a55;
-}
-
 html,
 body {
   margin: 0;
@@ -79,7 +75,7 @@ body {
 }
 
 .ggt-pill {
-  color: var(--ggt-accent);
+  color: var(--ggt-accent-text, var(--ggt-accent));
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.12em;
