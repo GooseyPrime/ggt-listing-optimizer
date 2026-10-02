@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   title: "Golden Goose Tools — Listing Optimizer",
   description:
     "Free Etsy listing score against published marketplace limits. Unlock twenty-five rewritten listings as a downloadable spreadsheet.",
+  icons: { icon: "https://www.goldengoosetools.com/images/GoldenGooseToolsnb.png" },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
