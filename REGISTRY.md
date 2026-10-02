@@ -7,7 +7,7 @@
 | path | `/tools/listing-optimizer` |
 | priceLabel | `$7` (from shop; mirror `NEXT_PUBLIC_PRICE_CENTS=700`) |
 | live | `false` |
-| accent | Terracotta `#c07a55` (`--ggt-accent`) |
+| accent | Citron `#b8b94e` (`--ggt-accent`) |
 
 Groundwork adds the shop catalogue row — **do not PR the shop from this repo**.
 
