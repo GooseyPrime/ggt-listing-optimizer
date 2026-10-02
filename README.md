@@ -2,7 +2,7 @@
 
 Free Etsy listing score against published marketplace limits. Paid unlock: up to twenty-five rewritten listings as a downloadable spreadsheet.
 
-Accent: Terracotta `#c07a55`. Registry id: `listing-optimizer`. Shop path: `/tools/listing-optimizer`.
+Accent: Citron `#b8b94e`. Registry id: `listing-optimizer`. Shop path: `/tools/listing-optimizer`.
 
 **The shop registry `live` flag stays false until Brandon says otherwise.** This app can ship as a draft; it must not appear in the catalogue until a stranger can complete the product-brief acceptance test end to end.
 
@@ -38,10 +38,10 @@ Never promises placement or sales. Not affiliated with Etsy. No Etsy logos.
 Chrome comes only from [`ggt-design-kit`](https://github.com/GooseyPrime/ggt-design-kit):
 
 ```json
-"ggt-design-kit": "github:GooseyPrime/ggt-design-kit"
+"ggt-design-kit": "github:GooseyPrime/ggt-design-kit#f69b388c00bfa8872a951aa683c51c14f8933ef8"
 ```
 
-Fonts: Fraunces, IBM Plex Sans, IBM Plex Mono via `next/font`. `--ggt-accent: #c07a55`. No Tailwind. No other UI library.
+Fonts: Fraunces, IBM Plex Sans, IBM Plex Mono via `next/font`. `--ggt-accent: #b8b94e`. No Tailwind. No other UI library.
 
 ## Shop payment handshake
 
