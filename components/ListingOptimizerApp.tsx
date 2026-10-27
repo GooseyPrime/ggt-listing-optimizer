@@ -17,10 +17,13 @@ import { buildListingInput, parseBatchListings } from "@/lib/parse";
 import { shopPriceLabel } from "@/lib/prices";
 import { rewriteListing, rewriteBatch } from "@/lib/rewrite";
 import { scoreListing } from "@/lib/score";
-import type { ListingScore, RewrittenListing } from "@/lib/types";
+import { EBAY_RULES_CHECKED } from "@/lib/rules";
+import type { ListingScore, Marketplace, RewrittenListing } from "@/lib/types";
 
 type DraftFields = {
+  marketplace: Marketplace;
   title: string;
+  subtitle: string;
   tagsRaw: string;
   description: string;
   attributesRaw: string;
@@ -28,7 +31,9 @@ type DraftFields = {
 };
 
 const EMPTY: DraftFields = {
+  marketplace: "etsy",
   title: "",
+  subtitle: "",
   tagsRaw: "",
   description: "",
   attributesRaw: "",
@@ -117,22 +122,31 @@ export function ListingOptimizerApp() {
     setError("");
   }
 
-  function onScore() {
-    setError("");
-    setRewrites(null);
+  const ebay = draft.marketplace === "ebay";
+  const marketName = ebay ? "eBay" : "Etsy";
+
+  function draftInput() {
     const input = buildListingInput({
       title: draft.title,
-      tagsRaw: draft.tagsRaw,
+      tagsRaw: ebay ? "" : draft.tagsRaw,
       description: draft.description,
       attributesRaw: draft.attributesRaw || undefined,
       brandWordsRaw: draft.brandWordsRaw || undefined,
     });
+    if (ebay && draft.subtitle.trim()) input.subtitle = draft.subtitle.trim();
+    return input;
+  }
+
+  function onScore() {
+    setError("");
+    setRewrites(null);
+    const input = draftInput();
     if (!input.title && input.tags.length === 0 && !input.description) {
       setScore(null);
-      setError("Paste a title, tags, and description to score.");
+      setError(ebay ? "Paste a title and description to score." : "Paste a title, tags, and description to score.");
       return;
     }
-    setScore(scoreListing(input));
+    setScore(scoreListing(input, draft.marketplace));
     persistDraft(draft);
   }
 
@@ -141,14 +155,8 @@ export function ListingOptimizerApp() {
       setError("Spreadsheet unlock requires a verified shop purchase.");
       return;
     }
-    const input = buildListingInput({
-      title: draft.title,
-      tagsRaw: draft.tagsRaw,
-      description: draft.description,
-      attributesRaw: draft.attributesRaw || undefined,
-      brandWordsRaw: draft.brandWordsRaw || undefined,
-    });
-    setRewrites([rewriteListing(input)]);
+    const input = draftInput();
+    setRewrites([rewriteListing(input, draft.marketplace)]);
   }
 
   function onRewriteBatch() {
@@ -164,7 +172,7 @@ export function ListingOptimizerApp() {
       );
       return;
     }
-    const result = rewriteBatch(listings);
+    const result = rewriteBatch(listings, draft.marketplace);
     setRewrites(result.rows);
     if (result.capped) {
       setError(`Batch capped at ${PAID_LISTING_CAP} listings (${result.omitted} omitted).`);
@@ -226,17 +234,37 @@ export function ListingOptimizerApp() {
           <p className="ggt-eyebrow">Golden Goose Tools</p>
           <h1>{TOOL_NAME}</h1>
           <p className="ggt-lede">
-            Paste one Etsy listing. Get a transparent score against published marketplace limits.
+            Paste one Etsy or eBay listing. Get a transparent score against published marketplace limits.
             Unlock up to {PAID_LISTING_CAP} rules-based rewrites as a spreadsheet
             {priceLabel ? ` (${priceLabel})` : ""}. We never promise sales or ranking.
           </p>
         </header>
 
         <p className="ggt-disclaimer">
-          Checks follow Etsy&apos;s published listing limits (rules checked {RULES_CHECKED}).
-          Golden Goose Tools is not affiliated with Etsy and does not use Etsy logos. Free v1
-          scores Etsy only — eBay and Shopify are not supported yet.
+          Checks follow each marketplace&apos;s published listing limits (Etsy rules checked{" "}
+          {RULES_CHECKED}; eBay rules checked {EBAY_RULES_CHECKED}). Golden Goose Tools is not
+          affiliated with Etsy or eBay and does not use their logos. Shopify is not supported yet.
         </p>
+
+        <div className="ggt-field">
+          <label className="ggt-label" htmlFor="lo-market">
+            Marketplace
+          </label>
+          <select
+            id="lo-market"
+            className="ggt-input"
+            value={draft.marketplace}
+            onChange={(e) => {
+              updateField("marketplace", e.target.value as Marketplace);
+              setScore(null);
+              setRewrites(null);
+            }}
+            aria-label="Marketplace"
+          >
+            <option value="etsy">Etsy</option>
+            <option value="ebay">eBay</option>
+          </select>
+        </div>
 
         <div className="ggt-field">
           <label className="ggt-label" htmlFor="lo-title">
@@ -252,6 +280,21 @@ export function ListingOptimizerApp() {
           />
         </div>
 
+        {ebay ? (
+          <div className="ggt-field">
+            <label className="ggt-label" htmlFor="lo-subtitle">
+              Subtitle (optional, up to 55)
+            </label>
+            <input
+              id="lo-subtitle"
+              className="ggt-input"
+              value={draft.subtitle}
+              onChange={(e) => updateField("subtitle", e.target.value)}
+              placeholder="Wheel thrown, dishwasher safe"
+              aria-label="Listing subtitle"
+            />
+          </div>
+        ) : (
         <div className="ggt-field">
           <label className="ggt-label" htmlFor="lo-tags">
             Tags (comma or newline, up to 13)
@@ -265,6 +308,7 @@ export function ListingOptimizerApp() {
             aria-label="Listing tags"
           />
         </div>
+        )}
 
         <div className="ggt-field">
           <label className="ggt-label" htmlFor="lo-desc">
@@ -282,7 +326,7 @@ export function ListingOptimizerApp() {
 
         <div className="ggt-field">
           <label className="ggt-label" htmlFor="lo-attrs">
-            Attributes (optional — Name: value per line)
+            {ebay ? "Item specifics" : "Attributes"} (optional — Name: value per line)
           </label>
           <textarea
             id="lo-attrs"
@@ -326,7 +370,10 @@ export function ListingOptimizerApp() {
               <strong>
                 {score.total}/{score.max}
               </strong>
-              <span className="ggt-pill">Etsy score · rules {RULES_CHECKED}</span>
+              <span className="ggt-pill">
+                {score.marketplace === "ebay" ? "eBay" : "Etsy"} score · rules{" "}
+                {score.marketplace === "ebay" ? EBAY_RULES_CHECKED : RULES_CHECKED}
+              </span>
             </div>
 
             <h2>Checks</h2>
@@ -343,6 +390,14 @@ export function ListingOptimizerApp() {
                   </div>
                   <p className="ggt-note">{c.message}</p>
                   {c.detail ? <p className="ggt-help">{c.detail}</p> : null}
+                  {c.sourceUrl ? (
+                    <p className="ggt-help">
+                      Published limit:{" "}
+                      <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer">
+                        source
+                      </a>
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -357,8 +412,9 @@ export function ListingOptimizerApp() {
           <ul>
             <li>Up to {PAID_LISTING_CAP} rewritten listings</li>
             <li>
-              CSV columns: new title · non-overlapping tags · first paragraph · keywords · brand
-              words kept
+              CSV columns: new title{ebay ? " (≤80 chars for eBay)" : ""} ·{" "}
+              {ebay ? "tags (blank — eBay has none)" : "non-overlapping tags"} · first paragraph ·
+              keywords · brand words kept ({marketName})
             </li>
             <li>Rules-based rewrite (deterministic) for v1</li>
             {priceLabel ? <li>Price: {priceLabel}</li> : <li>Price is shown at checkout</li>}

@@ -1,6 +1,6 @@
 # Golden Goose Tools — Listing Optimizer
 
-Free Etsy listing score against published marketplace limits. Paid unlock: up to twenty-five rewritten listings as a downloadable spreadsheet.
+Free Etsy or eBay listing score against each marketplace's published limits. Paid unlock: up to twenty-five rewritten listings as a downloadable spreadsheet.
 
 Accent: Citron `#b8b94e`. Registry id: `listing-optimizer`. Shop path: `/tools/listing-optimizer`.
 
@@ -18,11 +18,11 @@ Copy `.env.example` to `.env.local` if you want shop origin, mirrored price, or 
 
 ## What it does
 
-1. Paste one Etsy listing (title, tags, description, optional attributes / brand words).
+1. Pick a marketplace (Etsy default, or eBay) and paste one listing (title, tags or eBay subtitle, description, optional attributes / item specifics / brand words).
 2. Free result: score out of 100 with arithmetic working. Every check names the rule and shows `rulesChecked` (`2026-09-20`).
 3. Paid result (after the shop confirms the sale): rewrite up to 25 listings → CSV with new title, non-overlapping tags, first paragraph, keyword list, brand words retained.
 
-Checks (Etsy only in free v1):
+Etsy checks:
 
 - Title ≤ 140 characters (fail if over/empty)
 - First 60 characters phone preview soft warn (UX estimate)
@@ -31,7 +31,21 @@ Checks (Etsy only in free v1):
 - First paragraph covers what / who / size (soft)
 - Empty attributes warn when attributes are pasted
 
-Never promises placement or sales. Not affiliated with Etsy. No Etsy logos.
+eBay checks (selected with the marketplace selector; rules checked `2026-10-27`, each check links its source):
+
+| Rule | Limit | Official source |
+| --- | --- | --- |
+| Title length (fail if over/empty) | ≤ 80 characters | https://www.ebay.com/help/selling/listings/listing-tips/optimizing-listings-best-match?id=4166 |
+| Subtitle length (optional; fail if over) | ≤ 55 characters | https://developer.ebay.com/api-docs/sell/inventory/types/slr:Product (error 799: "Subtitles are limited to 55 characters including spaces") |
+| Item specifics left empty (warn, only if pasted) | — | https://www.ebay.com/help/selling/listings/creating-listing?id=4105 |
+
+- No tags on eBay: Etsy tag checks never run; pasted tags are ignored.
+- First paragraph what / who / size and key-words-early (UX estimate) are reused.
+- eBay 100-point split: hard limits 35 (title 17.5 + subtitle 17.5), item specifics 30, title structure 20, first paragraph 15.
+- Paid CSV rewrite caps the new title at 80 characters and leaves tags blank when eBay is selected.
+- Not included: capitalisation / punctuation title rules — no official eBay rule page found that states a limit, so it is omitted.
+
+Never promises placement or sales. Not affiliated with Etsy or eBay. No Etsy or eBay logos.
 
 ## Design kit
 
@@ -82,7 +96,7 @@ npm run build
 
 CI runs those three on every pull request.
 
-Fixtures under `fixtures/`: clean mug, messy over-limit listing, short/underfilled tags.
+Fixtures under `fixtures/`: Etsy clean mug, messy over-limit listing, short/underfilled tags; eBay clean mug, messy listing, no-specifics lamp.
 
 The score engine and rewrite rules live in `lib/` as deterministic TypeScript. The page only renders them.
 

@@ -18,7 +18,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Golden Goose Tools — Listing Optimizer",
   description:
-    "Free Etsy listing score against published marketplace limits. Unlock twenty-five rewritten listings as a downloadable spreadsheet.",
+    "Free Etsy or eBay listing score against published marketplace limits. Unlock twenty-five rewritten listings as a downloadable spreadsheet.",
   icons: { icon: "https://www.goldengoosetools.com/images/GoldenGooseToolsnb.png" },
 };
 
