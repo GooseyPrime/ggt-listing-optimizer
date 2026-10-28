@@ -1,6 +1,6 @@
-import { ETSY } from "./rules";
+import { EBAY, ETSY } from "./rules";
 import { PAID_LISTING_CAP } from "./config";
-import type { BatchRewriteResult, ListingInput, RewrittenListing } from "./types";
+import type { BatchRewriteResult, ListingInput, Marketplace, RewrittenListing } from "./types";
 
 const STOP = new Set([
   "a", "an", "the", "and", "or", "for", "of", "to", "in", "on", "with", "by", "from",
@@ -67,7 +67,7 @@ function extractKeywords(input: ListingInput): string[] {
   return uniquePreserve([...fromTitle, ...fromTags, ...fromDesc]).slice(0, 24);
 }
 
-function buildTitle(input: ListingInput, keywords: string[]): string {
+function buildTitle(input: ListingInput, keywords: string[], maxChars: number): string {
   const brand = (input.brandWords ?? []).filter(Boolean);
   const lead = uniquePreserve([
     ...brand,
@@ -82,8 +82,10 @@ function buildTitle(input: ListingInput, keywords: string[]): string {
       .join(" ");
     if (extra) title = `${title} ${extra}`.trim();
   }
-  if (charLen(title) > ETSY.titleMaxChars) {
-    title = [...title].slice(0, ETSY.titleMaxChars).join("").replace(/\s+\S*$/, "").trim();
+  if (charLen(title) > maxChars) {
+    const cut = [...title].slice(0, maxChars + 1).join("");
+    title = cut.replace(/\s+\S*$/, "").trim();
+    if (charLen(title) > maxChars) title = [...title].slice(0, maxChars).join("").trim();
   }
   return title;
 }
@@ -152,11 +154,16 @@ function retainBrandWords(input: ListingInput): string[] {
 }
 
 /** Deterministic rules-based rewrite for one listing (v1 — no model). */
-export function rewriteListing(input: ListingInput): RewrittenListing {
+export function rewriteListing(
+  input: ListingInput,
+  marketplace: Marketplace = "etsy",
+): RewrittenListing {
   const keywords = extractKeywords(input);
+  const ebay = marketplace === "ebay";
   return {
-    newTitle: buildTitle(input, keywords),
-    tags: buildTags(input, keywords),
+    newTitle: buildTitle(input, keywords, ebay ? EBAY.titleMaxChars : ETSY.titleMaxChars),
+    // eBay listings have no tags.
+    tags: ebay ? [] : buildTags(input, keywords),
     firstParagraph: buildFirstParagraph(input, keywords),
     keywords,
     brandWordsRetained: retainBrandWords(input),
@@ -164,11 +171,14 @@ export function rewriteListing(input: ListingInput): RewrittenListing {
   };
 }
 
-export function rewriteBatch(listings: ListingInput[]): BatchRewriteResult {
+export function rewriteBatch(
+  listings: ListingInput[],
+  marketplace: Marketplace = "etsy",
+): BatchRewriteResult {
   const capped = listings.length > PAID_LISTING_CAP;
   const slice = listings.slice(0, PAID_LISTING_CAP);
   return {
-    rows: slice.map(rewriteListing),
+    rows: slice.map((l) => rewriteListing(l, marketplace)),
     capped,
     omitted: Math.max(0, listings.length - PAID_LISTING_CAP),
   };
